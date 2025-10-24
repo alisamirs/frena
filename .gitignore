@@ -1,0 +1,57 @@
+# Flutter-specific ignores
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/
+build/
+*.iml
+.idea/
+.vscode/
+
+# Android-specific ignores
+android/.gradle/
+android/local.properties
+android/**/*.apk
+android/**/*.aab
+android/**/*.aar
+android/build/
+android/app/build/
+
+# iOS-specific ignores
+ios/.symlinks/
+ios/Flutter/.last_build_id
+ios/Flutter/.ios_symbols_cache
+ios/Pods/
+ios/.generated/
+
+# macOS-specific ignores
+macos/Flutter/ephemeral/
+
+# Web-specific ignores
+web/flutter_bootstrap.js
+
+# Windows-specific ignores
+windows/flutter/ephemeral/
+
+# Linux-specific ignores
+linux/flutter/ephemeral/
+
+# General ignores
+.DS_Store
+.env
+.env.*
+# VS Code files
+.vscode/
+
+# IntelliJ-specific files
+.idea/
+*.iml
+
+# Crash reporting
+*.log
+
+# Dependency caches
+.pub-cache/
+
+# Gemini-specific ignores
+.gemini/
