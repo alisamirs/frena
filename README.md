@@ -20,6 +20,15 @@ This project is an open-source mobile application built with Flutter.
 *   **Offline Mode:** The app caches the last fetched rates, so it's always available, even without an internet connection.
 *   **Comprehensive Currency List:** View a full list of exchange rates against your chosen base currency.
 
+## Tech Stack
+
+*   **Framework:** [Flutter](https://flutter.dev/)
+*   **Language:** [Dart](https://dart.dev/)
+*   **State Management:** `setState` (simple, built-in)
+*   **API Handling:** `http` package
+*   **Local Storage:** `sqflite` for SQLite database
+*   **Date Formatting:** `intl` package
+
 ## Screenshots
 
 | Currency List | Converter |
@@ -38,29 +47,47 @@ Frena is built using the Flutter framework and the Dart language. The architectu
     *   **Remote:** Fetches live data from the [ExchangeRate-API "Open API"](https://www.exchangerate-api.com).
     *   **Local:** A SQLite database stores the most recent rates for offline access.
 
+## Repository Structure
+
+```
+├── android/          # Android-specific files
+├── ios/              # iOS-specific files
+├── lib/
+│   ├── api_service.dart      # Handles API communication
+│   ├── converter_screen.dart # The currency converter screen UI
+│   ├── database_helper.dart  # Manages the local SQLite database
+│   └── main.dart           # Main application entry point and currency list screen
+├── test/             # Application tests
+├── pubspec.yaml      # Project dependencies and configuration
+└── README.md         # This file
+```
+
 ## Getting Started
 
 To get a local copy up and running, follow these simple steps.
 
-### Prerequisites
+### Downloads
 
-*   **Flutter SDK:** Make sure you have the Flutter SDK installed. For installation instructions, see the [official Flutter documentation](https://flutter.dev/docs/get-started/install).
+You can download the latest release APK directly from the [**GitHub Releases**](https://github.com/alisamirs/frena/releases) page.
 
-### Installation & Running
+### Installation & Running from Source
 
-1.  **Clone the repo:**
+1.  **Prerequisites:**
+    *   **Flutter SDK:** Make sure you have the Flutter SDK installed. For installation instructions, see the [official Flutter documentation](https://flutter.dev/docs/get-started/install).
+
+2.  **Clone the repo:**
     ```sh
     git clone https://github.com/alisamirs/frena.git
     ```
-2.  **Navigate to the project directory:**
+3.  **Navigate to the project directory:**
     ```sh
     cd frena
     ```
-3.  **Install dependencies:**
+4.  **Install dependencies:**
     ```sh
     flutter pub get
     ```
-4.  **Run the app:**
+5.  **Run the app:**
     ```sh
     flutter run
     ```
