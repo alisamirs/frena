@@ -56,5 +56,8 @@ linux/flutter/ephemeral/
 # Gemini-specific ignores
 .gemini/
 
+# Gemini-specific ignores
+gemini.md
+
 # Terminal output ignores
 terminal out.txt
