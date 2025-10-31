@@ -15,10 +15,16 @@ This project is an open-source mobile application built with Flutter.
 ## Features
 
 *   **Real-Time Exchange Rates:** Get the latest rates for over 160 currencies.
-*   **Currency Converter:** A simple, intuitive interface to convert between currencies.
+*   **Intelligent Currency Converter:** A beautiful, intuitive interface to convert between currencies with live updates.
 *   **User-Defined Base Currency:** Set your home currency for a personalized experience.
+*   **Favorites System:** Mark your frequently used currencies as favorites for quick access.
+*   **Search Functionality:** Quickly find any currency by code or name.
 *   **Offline Mode:** The app caches the last fetched rates, so it's always available, even without an internet connection.
-*   **Comprehensive Currency List:** View a full list of exchange rates against your chosen base currency.
+*   **Comprehensive Currency List:** View a full list of exchange rates with currency flags and full names.
+*   **Smart Sorting:** Favorites appear first, followed by popular currencies, then alphabetically.
+*   **Copy to Clipboard:** Easy one-tap copying of converted amounts.
+*   **Beautiful UI:** Modern Material Design 3 with smooth animations and responsive layout.
+*   **Dark Mode Support:** Automatically adapts to system theme preferences.
 
 ## Tech Stack
 
@@ -50,16 +56,19 @@ Frena is built using the Flutter framework and the Dart language. The architectu
 ## Repository Structure
 
 ```
-├── android/          # Android-specific files
-├── ios/              # iOS-specific files
+├── android/                    # Android-specific files
+├── ios/                        # iOS-specific files
 ├── lib/
-│   ├── api_service.dart      # Handles API communication
-│   ├── converter_screen.dart # The currency converter screen UI
-│   ├── database_helper.dart  # Manages the local SQLite database
-│   └── main.dart           # Main application entry point and currency list screen
-├── test/             # Application tests
-├── pubspec.yaml      # Project dependencies and configuration
-└── README.md         # This file
+│   ├── api_service.dart        # Handles API communication
+│   ├── converter_screen.dart   # Enhanced currency converter screen UI
+│   ├── currency_data.dart      # Currency information (names, flags, popular list)
+│   ├── database_helper.dart    # Manages the local SQLite database
+│   ├── main.dart               # Main app entry point and currency list screen
+│   ├── preferences_service.dart # User preferences management
+│   └── settings_screen.dart    # Settings and base currency selection
+├── test/                       # Application tests
+├── pubspec.yaml                # Project dependencies and configuration
+└── README.md                   # This file
 ```
 
 ## Getting Started

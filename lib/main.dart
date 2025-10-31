@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:frena/api_service.dart';
 import 'package:frena/converter_screen.dart';
 import 'package:frena/database_helper.dart';
+import 'package:frena/preferences_service.dart';
+import 'package:frena/currency_data.dart';
+import 'package:frena/settings_screen.dart';
 import 'package:intl/intl.dart';
 
 void main() {
@@ -16,10 +19,32 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Frena',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF7E57C2),
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       ),
-      home: const CurrencyListPage(title: 'Frena - Currency Rates'),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF7E57C2),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      home: const CurrencyListPage(title: 'Frena'),
     );
   }
 }
@@ -41,13 +66,27 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
   String _errorMessage = '';
   String _baseCurrency = 'USD'; // Default base currency
   List<String> _allCurrencies = []; // To store all available currencies for the dropdown
+  List<String> _favoriteCurrencies = []; // User's favorite currencies
   int? _lastUpdated; // Timestamp of the last successful fetch
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _showFavoritesOnly = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchAllCurrencies(); // Fetch all currencies once
-    _fetchRates();
+    _loadUserPreferences();
+  }
+
+  Future<void> _loadUserPreferences() async {
+    final baseCurrency = await PreferencesService.getBaseCurrency();
+    final favorites = await PreferencesService.getFavoriteCurrencies();
+    setState(() {
+      _baseCurrency = baseCurrency;
+      _favoriteCurrencies = favorites;
+    });
+    await _fetchAllCurrencies(); // Fetch all currencies once
+    await _fetchRates();
   }
 
   Future<void> _fetchAllCurrencies() async {
@@ -57,8 +96,8 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
         _allCurrencies = data.keys.toList()..sort();
       });
     } catch (e) {
-      // Handle error, maybe show a snackbar or log it
-      print('Error fetching all currencies: $e');
+      // Handle error silently, will be caught in _fetchRates
+      debugPrint('Error fetching all currencies: $e');
     }
   }
 
@@ -85,7 +124,7 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
           _rates = cachedData['rates'];
           _lastUpdated = cachedData['timestamp'];
           _isLoading = false;
-          _errorMessage = 'Showing offline data. Last updated: ${_formatTimestamp(_lastUpdated)}';
+          _errorMessage = 'Showing offline data';
         });
       } else {
         setState(() {
@@ -99,50 +138,142 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
   String _formatTimestamp(int? timestamp) {
     if (timestamp == null) return 'N/A';
     final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return DateFormat.yMd().add_jm().format(dateTime);
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return DateFormat.yMd().add_jm().format(dateTime);
+    }
+  }
+
+  Future<void> _toggleFavorite(String currency) async {
+    final isFav = _favoriteCurrencies.contains(currency);
+    if (isFav) {
+      await PreferencesService.removeFavoriteCurrency(currency);
+      setState(() {
+        _favoriteCurrencies.remove(currency);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$currency removed from favorites'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } else {
+      await PreferencesService.addFavoriteCurrency(currency);
+      setState(() {
+        _favoriteCurrencies.add(currency);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$currency added to favorites'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    }
+  }
+
+  List<MapEntry<String, dynamic>> _getFilteredRates() {
+    var entries = _rates.entries.toList();
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      entries = entries.where((entry) {
+        final code = entry.key.toLowerCase();
+        final name = CurrencyData.getCurrencyName(entry.key).toLowerCase();
+        final query = _searchQuery.toLowerCase();
+        return code.contains(query) || name.contains(query);
+      }).toList();
+    }
+
+    // Filter by favorites
+    if (_showFavoritesOnly) {
+      entries = entries.where((entry) => _favoriteCurrencies.contains(entry.key)).toList();
+    }
+
+    // Sort: favorites first, then popular currencies, then alphabetically
+    entries.sort((a, b) {
+      final aIsFav = _favoriteCurrencies.contains(a.key);
+      final bIsFav = _favoriteCurrencies.contains(b.key);
+      
+      if (aIsFav && !bIsFav) return -1;
+      if (!aIsFav && bIsFav) return 1;
+      
+      final aIsPopular = CurrencyData.isPopular(a.key);
+      final bIsPopular = CurrencyData.isPopular(b.key);
+      
+      if (aIsPopular && !bIsPopular) return -1;
+      if (!aIsPopular && bIsPopular) return 1;
+      
+      return a.key.compareTo(b.key);
+    });
+
+    return entries;
+  }
+
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(
+          currentBaseCurrency: _baseCurrency,
+          onBaseCurrencyChanged: (newCurrency) {
+            setState(() {
+              _baseCurrency = newCurrency;
+            });
+            _fetchRates();
+          },
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final filteredRates = _getFilteredRates();
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.title),
+            Row(
+              children: [
+                Text(CurrencyData.getFlag(_baseCurrency)),
+                const SizedBox(width: 8),
+                Text('Frena - $_baseCurrency'),
+              ],
+            ),
             if (_lastUpdated != null)
               Text(
-                'Last updated: ${_formatTimestamp(_lastUpdated)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                'Updated ${_formatTimestamp(_lastUpdated)}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.black54,
+                    ),
               ),
           ],
         ),
         actions: [
-          // Dropdown for base currency selection
-          if (_allCurrencies.isNotEmpty)
-            DropdownButton<String>(
-              value: _baseCurrency,
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.white), // White icon for visibility
-              dropdownColor: Theme.of(context).colorScheme.inversePrimary, // Match app bar color
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _baseCurrency = newValue;
-                    _fetchRates(); // Fetch new rates with the selected base currency
-                  });
-                }
-              },
-              items: _allCurrencies.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value, style: const TextStyle(color: Colors.white)), // White text for visibility
-                );
-              }).toList(),
-            ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _navigateToSettings,
+            tooltip: 'Settings',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _fetchRates,
+            tooltip: 'Refresh rates',
           ),
         ],
       ),
@@ -152,40 +283,261 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      _errorMessage,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red, fontSize: 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red[300],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _fetchRates,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try Again'),
+                        ),
+                      ],
                     ),
                   ),
                 )
               : Column(
                   children: [
-                    if (_errorMessage.isNotEmpty && _rates.isNotEmpty)
-                      Padding(
+                    if (_errorMessage.isNotEmpty)
+                      Container(
+                        width: double.infinity,
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          _errorMessage,
-                          style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
+                        color: Colors.orange[100],
+                        child: Row(
+                          children: [
+                            Icon(Icons.wifi_off, color: Colors.orange[900]),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage,
+                                style: TextStyle(
+                                  color: Colors.orange[900],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _rates.length,
-                        itemBuilder: (context, index) {
-                          final currencyCode = _rates.keys.elementAt(index);
-                          final rate = _rates[currencyCode];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: ListTile(
-                              title: Text(currencyCode),
-                              trailing: Text(rate.toStringAsFixed(4)),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search currencies...',
+                                prefixIcon: const Icon(Icons.search),
+                                suffixIcon: _searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.clear),
+                                        onPressed: () {
+                                          setState(() {
+                                            _searchController.clear();
+                                            _searchQuery = '';
+                                          });
+                                        },
+                                      )
+                                    : null,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value;
+                                });
+                              },
                             ),
-                          );
-                        },
+                          ),
+                          const SizedBox(width: 8),
+                          FilterChip(
+                            label: Text(
+                              _favoriteCurrencies.isEmpty
+                                  ? 'Favorites'
+                                  : 'Favorites (${_favoriteCurrencies.length})',
+                            ),
+                            selected: _showFavoritesOnly,
+                            onSelected: (bool selected) {
+                              setState(() {
+                                _showFavoritesOnly = selected;
+                              });
+                            },
+                            avatar: Icon(
+                              _showFavoritesOnly
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              size: 18,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    if (filteredRates.isEmpty)
+                      Expanded(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _showFavoritesOnly
+                                    ? Icons.star_border
+                                    : Icons.search_off,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _showFavoritesOnly
+                                    ? 'No favorite currencies yet.\nTap the star icon to add favorites!'
+                                    : 'No currencies found',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: filteredRates.length,
+                          itemBuilder: (context, index) {
+                            final entry = filteredRates[index];
+                            final currencyCode = entry.key;
+                            final rate = entry.value;
+                            final isFavorite =
+                                _favoriteCurrencies.contains(currencyCode);
+                            final isPopular =
+                                CurrencyData.isPopular(currencyCode);
+
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              child: ListTile(
+                                leading: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      CurrencyData.getFlag(currencyCode),
+                                      style: const TextStyle(fontSize: 32),
+                                    ),
+                                  ],
+                                ),
+                                title: Row(
+                                  children: [
+                                    Text(
+                                      currencyCode,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    if (isPopular && !isFavorite)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 8),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            'POPULAR',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimaryContainer,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                subtitle: Text(
+                                  CurrencyData.getCurrencyName(currencyCode),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          rate.toStringAsFixed(4),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Text(
+                                          '1 $_baseCurrency',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: Icon(
+                                        isFavorite
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color: isFavorite
+                                            ? Colors.amber
+                                            : Colors.grey,
+                                      ),
+                                      onPressed: () =>
+                                          _toggleFavorite(currencyCode),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
@@ -196,16 +548,28 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
                     ),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ConverterScreen()),
+            MaterialPageRoute(
+              builder: (context) => ConverterScreen(
+                initialFromCurrency: _baseCurrency,
+                allCurrencies: _allCurrencies,
+              ),
+            ),
           );
         },
         tooltip: 'Open Converter',
-        child: const Icon(Icons.currency_exchange),
+        icon: const Icon(Icons.currency_exchange),
+        label: const Text('Convert'),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
