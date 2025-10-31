@@ -4,7 +4,7 @@ This document outlines all the enhancements made to the Frena (Forex Arena) proj
 
 ## Overview
 
-The enhancements focus on improving user experience, adding requested features from the gemini.md configuration, and creating a more polished, production-ready application.
+The enhancements focus on improving user experience, and creating a more polished, production-ready application.
 
 ## Major Enhancements
 
@@ -223,7 +223,7 @@ flutter_svg: ^2.0.10        # SVG support for future use
 ```
 
 ### State Management
-- Continues to use `setState()` for simplicity (as per gemini.md)
+- Continues to use `setState()` for simplicity
 - State is well-organized within each screen
 - Preferences loaded on app init
 - Efficient state updates (only what's needed)
@@ -291,7 +291,7 @@ flutter_svg: ^2.0.10        # SVG support for future use
 
 ## Future Enhancement Opportunities
 
-Based on gemini.md requirements, these features could be added next:
+These features could be added next:
 
 ### Priority 1 (Nice-to-Haves)
 - [ ] Historical charts for currency pairs
@@ -343,7 +343,7 @@ Based on gemini.md requirements, these features could be added next:
 
 ## Conclusion
 
-These enhancements transform Frena from a basic MVP into a polished, user-friendly application that addresses the core problems outlined in gemini.md:
+These enhancements transform Frena from a basic MVP into a polished, user-friendly application that addresses the core problems:
 
 ✅ **Financial information asymmetry** - Solved with real-time, accurate rates  
 ✅ **User personalization** - Favorites, base currency, search  
