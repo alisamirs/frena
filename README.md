@@ -105,9 +105,3 @@ You can download the latest release APK directly from the [**GitHub Releases**](
     ```sh
     flutter run
     ```
-
-## Logo
-
-![Logo](assets\icon\app_icon.png)
-
----
