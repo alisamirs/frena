@@ -37,9 +37,14 @@ This project is an open-source mobile application built with Flutter.
 
 ## Screenshots
 
-| Currency List | Converter |
+| Currency List | Base currency |
 | :---: | :---: |
-| ![Screenshot of Currency List](https://placehold.co/300x600/ffffff/000000?text=Currency+List+Screen) | ![Screenshot of Converter](https://placehold.co/300x600/ffffff/000000?text=Converter+Screen) |
+| ![Screenshot of Currency List](assets/Screenshot_currencylist.png) | ![Screenshot of Base currency](assets/Screenshot_basecurrency.jpg) |
+
+| Converter |  
+| :---: |
+| ![Screenshot of Converter](assets/Screenshot_converter.jpg) |
+
 
 ## Architecture Overview
 
