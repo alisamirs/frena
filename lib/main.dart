@@ -426,8 +426,8 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
                                     Expanded(
                                       child: Text(
                                         _reverseRates
-                                            ? 'Showing: Curr → ${CurrencyData.getFlag(_baseCurrency)} $_baseCurrency'
-                                            : 'Showing: ${CurrencyData.getFlag(_baseCurrency)} $_baseCurrency → Foreign',
+                                            ? 'Showing: CURR → ${CurrencyData.getFlag(_baseCurrency)} $_baseCurrency'
+                                            : 'Showing: ${CurrencyData.getFlag(_baseCurrency)} $_baseCurrency → CURR',
                                         style: Theme.of(context).textTheme.bodySmall,
                                       ),
                                     ),
