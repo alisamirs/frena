@@ -106,8 +106,8 @@ You can download the latest release APK directly from the [**GitHub Releases**](
     flutter run
     ```
 
-## Demo
+## Logo
 
-![App Demo GIF](https://placehold.co/600x400/7e57c2/ffffff?text=App+Demo+GIF)
+![Logo](assets\icon\app_icon.png)
 
 ---
