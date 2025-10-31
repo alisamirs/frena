@@ -5,6 +5,7 @@ class PreferencesService {
   static const String _baseCurrencyKey = 'base_currency';
   static const String _favoriteCurrenciesKey = 'favorite_currencies';
   static const String _hasSeenOnboardingKey = 'has_seen_onboarding';
+  static const String _reverseRatesKey = 'reverse_rates';
 
   /// Get the user's base currency (default: USD)
   static Future<String> getBaseCurrency() async {
@@ -62,5 +63,17 @@ class PreferencesService {
   static Future<void> setOnboardingSeen() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hasSeenOnboardingKey, true);
+  }
+
+  /// Get reverse rates display setting (default: false = base → foreign)
+  static Future<bool> getReverseRates() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_reverseRatesKey) ?? false;
+  }
+
+  /// Set reverse rates display setting
+  static Future<void> setReverseRates(bool reverse) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_reverseRatesKey, reverse);
   }
 }

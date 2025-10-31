@@ -71,6 +71,7 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showFavoritesOnly = false;
+  bool _reverseRates = false; // Toggle for displaying foreign → base instead of base → foreign
 
   @override
   void initState() {
@@ -81,9 +82,11 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
   Future<void> _loadUserPreferences() async {
     final baseCurrency = await PreferencesService.getBaseCurrency();
     final favorites = await PreferencesService.getFavoriteCurrencies();
+    final reverseRates = await PreferencesService.getReverseRates();
     setState(() {
       _baseCurrency = baseCurrency;
       _favoriteCurrencies = favorites;
+      _reverseRates = reverseRates;
     });
     await _fetchAllCurrencies(); // Fetch all currencies once
     await _fetchRates();
@@ -181,6 +184,13 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
         );
       }
     }
+  }
+
+  Future<void> _toggleReverseRates() async {
+    setState(() {
+      _reverseRates = !_reverseRates;
+    });
+    await PreferencesService.setReverseRates(_reverseRates);
   }
 
   List<MapEntry<String, dynamic>> _getFilteredRates() {
@@ -392,6 +402,50 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
                         ],
                       ),
                     ),
+                    // Reverse rates toggle
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Card(
+                              color: Theme.of(context).colorScheme.surfaceVariant,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.swap_horiz,
+                                      size: 20,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _reverseRates
+                                            ? 'Showing: Curr → ${CurrencyData.getFlag(_baseCurrency)} $_baseCurrency'
+                                            : 'Showing: ${CurrencyData.getFlag(_baseCurrency)} $_baseCurrency → Foreign',
+                                        style: Theme.of(context).textTheme.bodySmall,
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: _reverseRates,
+                                      onChanged: (value) {
+                                        _toggleReverseRates();
+                                      },
+                                      activeColor: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     if (filteredRates.isEmpty)
                       Expanded(
                         child: Center(
@@ -432,6 +486,12 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
                                 _favoriteCurrencies.contains(currencyCode);
                             final isPopular =
                                 CurrencyData.isPopular(currencyCode);
+
+                            // Calculate display rate based on reverse setting
+                            final displayRate = _reverseRates ? (1 / rate) : rate;
+                            final displayBaseText = _reverseRates 
+                                ? '1 $currencyCode' 
+                                : '1 $_baseCurrency';
 
                             return Card(
                               margin: const EdgeInsets.symmetric(
@@ -503,14 +563,14 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
                                           CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          rate.toStringAsFixed(4),
+                                          displayRate.toStringAsFixed(4),
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
                                         ),
                                         Text(
-                                          '1 $_baseCurrency',
+                                          displayBaseText,
                                           style: TextStyle(
                                             fontSize: 11,
                                             color: Colors.grey[600],
@@ -538,14 +598,14 @@ class _CurrencyListPageState extends State<CurrencyListPage> {
                           },
                         ),
                       ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Exchange rates provided by ExchangeRate-API.com',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+                    // Padding(
+                    //   padding: const EdgeInsets.all(8.0),
+                    //   child: Text(
+                    //     'Exchange rates provided by ExchangeRate-API.com',
+                    //     style: Theme.of(context).textTheme.bodySmall,
+                    //     textAlign: TextAlign.center,
+                    //   ),
+                    // ),
                   ],
                 ),
       floatingActionButton: FloatingActionButton.extended(
