@@ -1,6 +1,6 @@
 # Frena (Forex Arena)
 
-![Frena Banner](https://placehold.co/1200x400/7e57c2/ffffff?text=Frena)
+![Frena Banner](assets/app_icon.png)
 
 > Frena demystifies foreign exchange for everyday life. Our mission is to break down financial barriers by providing instant, clear, and accurate currency conversion, empowering you to make confident decisions in a connected world.
 
