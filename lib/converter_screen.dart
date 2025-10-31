@@ -201,6 +201,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   value: _fromCurrency,
+                                  isExpanded: true,
                                   decoration: const InputDecoration(
                                     border: OutlineInputBorder(),
                                     contentPadding: EdgeInsets.symmetric(
@@ -306,6 +307,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                               Expanded(
                                 child: DropdownButtonFormField<String>(
                                   value: _toCurrency,
+                                  isExpanded: true,
                                   decoration: const InputDecoration(
                                     border: OutlineInputBorder(),
                                     contentPadding: EdgeInsets.symmetric(

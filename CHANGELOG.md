@@ -2,9 +2,15 @@
 
 All notable changes to the Frena project will be documented in this file.
 
-## [Enhanced] - 2025-10-31
+## [1.0.0] - 2025-10-31
+
+### 🎉 First Stable Release
+
+This is the first production-ready release of Frena!
 
 ### Added
+- **Custom App Icon**: Professional purple launcher icon with F₹ logo
+- **Adaptive Icons**: Support for Android adaptive icons with themed backgrounds
 - **Favorites System**: Users can now mark currencies as favorites for quick access
   - Star/unstar currencies with a single tap
   - Favorites appear at the top of the currency list
